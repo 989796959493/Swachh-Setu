@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Swachh Setu</title>
+<style>
+  :root {
+    --bg: #f5f7f4; --card: #ffffff; --ink: #1c2a22; --muted: #637067;
+    --brand: #1f8a4c; --line: #e2e8e2; --warn: #b26a00;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root { --bg: #111815; --card: #1a241f; --ink: #e8f0ea; --muted: #94a59a; --line: #2a3830; --warn: #f0b24a; }
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink);
+         font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; line-height: 1.5; }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 16px; }
+  header { padding: 20px 0 8px; }
+  h1 { margin: 0; font-size: 1.7rem; letter-spacing: -0.02em; }
+  h1 span { color: var(--brand); }
+  .tag { color: var(--muted); margin: 4px 0 0; }
+  .steps { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .steps b { background: var(--card); border: 1px solid var(--line); border-radius: 999px;
+             padding: 3px 12px; font-size: .8rem; font-weight: 600; }
+  .grid { display: grid; gap: 16px; margin-top: 16px; grid-template-columns: 1fr; }
+  @media (min-width: 760px) { .grid { grid-template-columns: 1fr 1fr; } }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 18px; }
+  .card h2 { margin: 0 0 12px; font-size: 1.05rem; }
+  .drop { border: 2px dashed var(--line); border-radius: 14px; padding: 24px; text-align: center;
+          cursor: pointer; transition: border-color .15s; }
+  .drop.over, .drop:hover { border-color: var(--brand); }
+  .drop p { margin: 6px 0 0; color: var(--muted); font-size: .9rem; }
+  .preview { width: 100%; max-height: 260px; object-fit: contain; border-radius: 12px; margin-top: 12px; display: none; }
+  button { font: inherit; background: var(--brand); color: #fff; border: 0; border-radius: 10px;
+           padding: 10px 16px; font-weight: 600; cursor: pointer; margin-top: 12px; }
+  button.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); margin-left: 6px; }
+  button:disabled { opacity: .5; cursor: default; }
+  .banner { border-radius: 10px; padding: 8px 12px; font-size: .85rem; margin-bottom: 12px; display: none;
+            background: color-mix(in srgb, var(--warn) 15%, transparent); color: var(--warn); }
+  .chip { display: inline-block; color: #fff; border-radius: 999px; padding: 4px 12px; font-weight: 600; font-size: .85rem; }
+  .big { font-size: 1.6rem; font-weight: 700; margin: 4px 0; text-transform: capitalize; }
+  .meta { color: var(--muted); font-size: .9rem; }
+  .box { background: var(--bg); border-radius: 10px; padding: 10px 12px; margin-top: 10px; font-size: .92rem; }
+  .box b { display: block; font-size: .78rem; text-transform: uppercase; letter-spacing: .05em; color: var(--muted); }
+  .empty { color: var(--muted); }
+  .kpis { display: flex; gap: 12px; margin-bottom: 14px; }
+  .kpi { flex: 1; background: var(--bg); border-radius: 12px; padding: 10px 12px; }
+  .kpi div { font-size: 1.5rem; font-weight: 700; }
+  .kpi span { font-size: .8rem; color: var(--muted); }
+  .bar { margin: 8px 0; font-size: .88rem; }
+  .bar .track { height: 10px; background: var(--bg); border-radius: 6px; overflow: hidden; margin-top: 3px; }
+  .bar .fill { height: 100%; border-radius: 6px; }
+  ul.recent { list-style: none; padding: 0; margin: 12px 0 0; font-size: .86rem; color: var(--muted); }
+  ul.recent li { padding: 4px 0; border-top: 1px solid var(--line); display: flex; justify-content: space-between; }
+  footer { color: var(--muted); font-size: .8rem; text-align: center; padding: 24px 0 8px; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>Swachh <span>Setu</span></h1>
+    <p class="tag">A bridge from your bin to a cleaner Bharat.</p>
+    <div class="steps"><b>1 Scan</b><b>2 Segregate</b><b>3 Recycle</b><b>4 Track</b></div>
+  </header>
+
+  <div class="grid">
+    <section class="card">
+      <h2>Scan waste</h2>
+      <div class="banner" id="demoBanner">Demo mode: no trained model loaded, so predictions are placeholders.</div>
+      <label class="drop" id="drop">
+        <strong>Tap to take or choose a photo</strong>
+        <p>Place one item in the frame, on a plain background.</p>
+        <input id="file" type="file" accept="image/*" capture="environment" hidden>
+      </label>
+      <img id="preview" class="preview" alt="Selected waste item">
+      <div>
+        <button id="go" disabled>Identify</button>
+        <button id="reset" class="ghost" type="button">Clear</button>
+      </div>
+      <div id="status" class="meta" style="margin-top:10px"></div>
+    </section>
+
+    <section class="card" id="resultCard">
+      <h2>What to do with it</h2>
+      <div id="result" class="empty">Scan an item to see where it belongs and how to give it a second life.</div>
+    </section>
+
+    <section class="card" style="grid-column: 1 / -1">
+      <h2>Impact dashboard</h2>
+      <div class="kpis">
+        <div class="kpi"><div id="kTotal">0</div><span>items scanned</span></div>
+        <div class="kpi"><div id="kPct">0%</div><span>recyclable</span></div>
+      </div>
+      <div id="bars"><span class="empty">No scans yet.</span></div>
+      <ul class="recent" id="recent"></ul>
+    </section>
+  </div>
+  <footer>Swachh Setu · AI First Product Builder Hackathon 2026</footer>
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+let chosen = null;
+
+function esc(s) {
+  return String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+}
+
+function setFile(f) {
+  if (!f) return;
+  chosen = f;
+  $("preview").src = URL.createObjectURL(f);
+  $("preview").style.display = "block";
+  $("go").disabled = false;
+  $("status").textContent = "";
+}
+
+$("file").addEventListener("change", (e) => setFile(e.target.files[0]));
+const drop = $("drop");
+["dragenter", "dragover"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.add("over"); }));
+["dragleave", "drop"].forEach((ev) => drop.addEventListener(ev, (e) => { e.preventDefault(); drop.classList.remove("over"); }));
+drop.addEventListener("drop", (e) => setFile(e.dataTransfer.files[0]));
+
+$("reset").addEventListener("click", () => {
+  chosen = null;
+  $("file").value = "";
+  $("preview").style.display = "none";
+  $("go").disabled = true;
+  $("status").textContent = "";
+  $("result").className = "empty";
+  $("result").textContent = "Scan an item to see where it belongs and how to give it a second life.";
+});
+
+$("go").addEventListener("click", async () => {
+  if (!chosen) return;
+  $("go").disabled = true;
+  $("status").textContent = "Analysing…";
+  const form = new FormData();
+  form.append("image", chosen);
+  try {
+    const res = await fetch("/api/classify", { method: "POST", body: form });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error || "Something went wrong.");
+    render(data);
+    $("status").textContent = "";
+    loadStats();
+  } catch (err) {
+    $("status").textContent = err.message;
+  } finally {
+    $("go").disabled = false;
+  }
+});
+
+function render(d) {
+  const r = d.result;
+  const pct = Math.round(r.confidence * 100);
+  let html = "";
+  if (d.uncertain) {
+    html += `<div class="box" style="margin:0 0 10px"><b>Not sure</b>Confidence is only ${pct}%. Retake the photo with better light and a plain background. This scan was not counted.</div>`;
+  }
+  html += `<span class="chip" style="background:${esc(r.color)}">${esc(r.bin)}</span>
+    <div class="big">${esc(r.label)}</div>
+    <div class="meta">${esc(r.category_label)} · ${pct}% confident · ${r.recyclable ? "Recyclable" : "Not easily recyclable"}</div>
+    <div class="box"><b>How to dispose</b>${esc(r.tip)}</div>
+    <div class="box"><b>Give it a second life</b>${esc(r.reuse)}</div>`;
+  if (d.alternatives && d.alternatives.length) {
+    html += `<div class="meta" style="margin-top:10px">Also considered: ${d.alternatives
+      .map((a) => `${esc(a.label)} (${Math.round(a.confidence * 100)}%)`).join(", ")}</div>`;
+  }
+  $("result").className = "";
+  $("result").innerHTML = html;
+}
+
+async function loadStats() {
+  const s = await (await fetch("/api/stats")).json();
+  $("kTotal").textContent = s.total;
+  $("kPct").textContent = s.recyclable_pct + "%";
+  if (s.by_category.length) {
+    const max = Math.max(...s.by_category.map((c) => c.count));
+    $("bars").innerHTML = s.by_category
+      .sort((a, b) => b.count - a.count)
+      .map((c) => `<div class="bar"><div>${esc(c.label)} · ${c.count}</div>
+        <div class="track"><div class="fill" style="width:${(100 * c.count) / max}%;background:${esc(c.color)}"></div></div></div>`)
+      .join("");
+  }
+  $("recent").innerHTML = s.recent
+    .map((r) => `<li><span>${esc(r.label)}</span><span>${Math.round(r.confidence * 100)}%</span></li>`).join("");
+}
+
+(async function init() {
+  const h = await (await fetch("/api/health")).json();
+  if (h.demo_mode) $("demoBanner").style.display = "block";
+  loadStats();
+})();
+</script>
+</body>
+</html>
